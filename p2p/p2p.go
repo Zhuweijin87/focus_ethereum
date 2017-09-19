@@ -38,8 +38,8 @@ func newServer(id discover.NodeID, pf func(*Peer)) *p2p.Server {
 	return serv
 }
 
-func servListen() {
-	conn := make(chan *p2p.Peer)
+func main() {
+	conned := make(chan *p2p.Peer)
 	randId := randomID()
 
 	srv := newServer(randId, func(p *p2p.Peer) {
@@ -52,7 +52,7 @@ func servListen() {
 		conn <- p
 	})
 
-	defer close(conn)
+	defer close(conned)
 	defer srv.Stop()
 
 	conn, err := net.DialTimeout("tcp", srv.ListenAddr, 5*time.Second)
@@ -63,6 +63,15 @@ func servListen() {
 
 	select {
 	case peer <- conn:
+		if peer.LocalAddr().String() != conn.RemoteAddr().String() {
+			log.Printf("peer started with wrong conn: %v, %v\n", peer.LocalAddr(), conn.RemoteAddr())
+		}
 
+		peers := srv.Peers()
+		if !reflect.DeepEqual(peers, []*Peer{peer}) {
+			log.Printf("Peers mismatch: got %v, want %v", peers, []*Peer{peer})
+		}
+	case <-time.After(1 * time.Second):
+		t.Error("server did not accept within one second")
 	}
 }
