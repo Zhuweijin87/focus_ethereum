@@ -145,7 +145,7 @@ type Protocol struct {
 }
 ```
 
-P2P 通信层相关的信息 whisper/whisper.go  
+P2P 通信层相关的信息 whisper/whisper.go  
 ```
 type Whisper struct {
     protocol        p2p.Protocol   // 协议信息(描述，参数)
@@ -183,7 +183,7 @@ type MessageParams struct {
 ```
 这里 TTL 可以认定为消息有效期，如果有效期过了，这会从网络中删除
 
-文本包 （传输过程中的数据包)
+文本包 （传输过程中的数据包)
 ```
 type Envelope struct {
     Version         []byte  // 版本
@@ -224,22 +224,22 @@ MessageParams : 用于发送消息
 Filter : 用于接收消息
 
 
-#### P2P 实现
+#### P2P实现
 
 + p2p/server.go
-    + Start() 
+    + Start() 
 
 + p2p/discover/udp.go <br>
     + ListenUDP(): 启动本地监听服务
-    + newUDP(): 实现本地IP到外网IP的转化(环回地址)接收peer返回
+    + newUDP(): 实现本地IP到外网IP的转化(环回地址)接收peer返回
     + makeEndpoint() : 创建RPC接口
     + loop():
-    + readLoop(): 处理的接收的UDP数据包
+    + readLoop(): 处理的接收的UDP数据包
 
 + whisper/whisper.go
     + add(): 发送消息的处理
         + 时间: 
-        + wh.mailServer.Archive(envelope) : 数据包存档
+        + wh.mailServer.Archive(envelope) : 数据包存档
 
 + whisper/doc.go
     + MailServer: 数据发送处理
