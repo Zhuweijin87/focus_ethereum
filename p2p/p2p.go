@@ -1,77 +1,282 @@
 package main
 
 import (
+	"bufio"
+	"crypto/ecdsa"
+	"flag"
 	"fmt"
-	"log"
-	"net"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/discover"
+	"github.com/ethereum/go-ethereum/p2p/nat"
+	ethparams "github.com/ethereum/go-ethereum/params"
+	whisper "github.com/ethereum/go-ethereum/whisper/whisperv5"
 )
 
-func randomID() (id discover.NodeID) {
-	for i := range id {
-		id[i] = byte(rand.Intn(255))
-	}
-	return id
-}
+const quitCommand = "~Q"
 
-func newServer(id discover.NodeID, pf func(*Peer)) *p2p.Server {
-	uniqueKey, _ := crypto.GenerateKey()
-	config := p2p.Config{
-		Name:       "test",
-		MaxPeers:   10,
-		ListenAddr: "192.168.1.195:8200",
-		PrivateKey: uniqueKey,
-	}
 
-	serv := p2p.Server{
-		Config:       config,
-		newPeerHook:  pf,
-		newTransport: func(fd net.Conn) transport { return newTestTransport(id, fd) },
-	}
+var (
+	server *p2p.Server
+	shh    *whisper.Whisper
+	done   chan struct{}
 
-	if err := serv.Start(); err != nil {
-		log.Println("fail to start server: ", err)
-	}
+	input = bufio.NewReader(os.Stdin)
+)
 
-	return serv
-}
+var (
+	symKey   []byte
+	asymKey  *ecdsa.PrivateKey
+	topic    whisper.TopicType
+	filterID string
+)
+
+
+var (
+	argVerbosity = flag.Int("verbosity", int(log.LvlInfo), "log verbosity level")
+	argTopic     = flag.String("topic", "44c7429f", "topic in hexadecimal format (e.g. 70a4beef)")
+	argPass      = flag.String("password", "123456", "message's encryption password")
+)
 
 func main() {
-	conned := make(chan *p2p.Peer)
-	randId := randomID()
+	flag.Parse()
+	initialize()
+	run()
+}
 
-	srv := newServer(randId, func(p *p2p.Peer) {
-		if p.ID() != remid {
-			log.Fatal("peer func called with wrong node id")
-		}
-		if p == nil {
-			log.Fatal("peer func called with nil conn")
-		}
-		conn <- p
-	})
+func initialize() {
+	log.Root().SetHandler(log.LvlFilterHandler(log.Lvl(*argVerbosity), log.StreamHandler(os.Stderr, log.TerminalFormat(true))))
 
-	defer close(conned)
-	defer srv.Stop()
+	done = make(chan struct{})
+	var peers []*discover.Node
+	var err error
+	var asymKeyID string  // 公钥
 
-	conn, err := net.DialTimeout("tcp", srv.ListenAddr, 5*time.Second)
+	//connect to mainnet
+	for _, node := range ethparams.MainnetBootnodes {
+		peer := discover.MustParseNode(node)
+		//fmt.Println(peer.IP, peer.TCP, peer.ID)
+		peers = append(peers, peer)
+	}
+
+	peer := discover.MustParseNode("enode://b89172e36cb79202dd0c0822d4238b7a7ddbefe8aa97489049c9afe68f71b10c5c9ce588ef9b5df58939f982c718c59243cc5add6cebf3321b88d752eac02626@182.254.155.208:33333")
+	//fmt.Println("Peers: ", peer)
+	peers = append(peers, peer)
+	shh = whisper.New(nil)
+
+	asymKeyID, err = shh.NewKeyPair()
 	if err != nil {
-		log.Fatal("could not dial:", err)
+		utils.Fatalf("Failed to generate a new key pair: %s", err)
 	}
-	defer conn.Close()
 
-	select {
-	case peer <- conn:
-		if peer.LocalAddr().String() != conn.RemoteAddr().String() {
-			log.Printf("peer started with wrong conn: %v, %v\n", peer.LocalAddr(), conn.RemoteAddr())
-		}
+	//fmt.Println("Key Pair: ", asymKeyID)
 
-		peers := srv.Peers()
-		if !reflect.DeepEqual(peers, []*Peer{peer}) {
-			log.Printf("Peers mismatch: got %v, want %v", peers, []*Peer{peer})
-		}
-	case <-time.After(1 * time.Second):
-		t.Error("server did not accept within one second")
+	// 私钥
+	asymKey, err = shh.GetPrivateKey(asymKeyID)
+	if err != nil {
+		utils.Fatalf("Failed to retrieve a new key pair: %s", err)
 	}
+
+	//fmt.Println("Private Key: ", asymKey)
+
+	maxPeers := 80
+
+	server = &p2p.Server{
+		Config: p2p.Config{
+			PrivateKey:     asymKey,
+			MaxPeers:       maxPeers,
+			Name:           common.MakeName("p2p chat group", "5.0"),
+			Protocols:      shh.Protocols(),
+			NAT:            nat.Any(),
+			BootstrapNodes: peers,
+			StaticNodes:    peers,
+			TrustedNodes:   peers,
+		},
+	}
+
+	fmt.Printf("Net list: %v\n", server.NetRestrict)
+}
+
+// 节点信息初始
+func configureNode() {
+	symKeyID, err := shh.AddSymKeyFromPassword(*argPass)
+	if err != nil {
+		utils.Fatalf("Failed to create symmetric key: %s", err)
+	}
+	symKey, err = shh.GetSymKey(symKeyID)
+	if err != nil {
+		utils.Fatalf("Failed to save symmetric key: %s", err)
+	}
+	copy(topic[:], common.FromHex(*argTopic))
+	fmt.Printf("Filter is configured for the topic: %x \n", topic)
+}
+
+// 启动服务
+func startServer() {
+	err := server.Start()
+	if err != nil {
+		utils.Fatalf("Failed to start Whisper peer: %s.", err)
+	}
+
+	fmt.Println("Whisper node started,please send message after connect to other nodes")
+	// first see if we can establish connection, then ask for user input
+	waitForConnection(false)
+	configureNode()
+	SubscribeMessage()
+
+	fmt.Printf("Please type the message. To quit type: '%s'\n", quitCommand)
+}
+
+// 订阅消息
+func SubscribeMessage() {
+	var err error
+
+	filter := whisper.Filter{
+		KeySym:   symKey,
+		KeyAsym:  asymKey,
+		Topics:   [][]byte{topic[:]},
+		AllowP2P: true,
+	}
+
+	//fmt.Println("Filter: ", filter)
+
+	filterID, err = shh.Subscribe(&filter)
+	if err != nil {
+		utils.Fatalf("Failed to install filter: %s", err)
+	}
+	fmt.Println("Subscribe Id: ", filterID )
+}
+
+// 等待连接
+func waitForConnection(timeout bool) {
+	var cnt int
+	var connected bool
+	for !connected {
+		time.Sleep(time.Millisecond * 500)
+		connected = server.PeerCount() > 0
+		if timeout {
+			cnt++
+			if cnt > 1000 {
+				utils.Fatalf("Timeout expired, failed to connect")
+			}
+		}
+	}
+
+	fmt.Println("Connected to peer,you can type message now.")
+}
+
+func run() {
+	startServer()
+	defer server.Stop()
+	shh.Start(nil)
+	defer shh.Stop()
+	//接收消息
+	go messageLoop()
+	//控制台发送消息
+	sendLoop()
+}
+
+func sendLoop() {
+	for {
+		s := scanLine(fmt.Sprintf("input %s to quit>", quitCommand))
+		if s == quitCommand {
+			fmt.Println("Quit command received")
+			close(done)
+			break
+		}
+		sendMsg([]byte(s))
+	}
+}
+
+// 发送消息
+func sendMsg(payload []byte) common.Hash {
+	params := whisper.MessageParams{
+		Src:      asymKey,
+		KeySym:   symKey,
+		Payload:  payload,
+		Topic:    topic,
+		TTL:      whisper.DefaultTTL,
+		PoW:      whisper.DefaultMinimumPoW,
+		WorkTime: 5,
+	}
+
+	// 生成一个没有签名，没有加密的消息
+	msg, err := whisper.NewSentMessage(&params)
+	if err != nil {
+		utils.Fatalf("failed to create new message: %s", err)
+	}
+
+	// 打包消息
+	envelope, err := msg.Wrap(&params)
+	if err != nil {
+		fmt.Printf("failed to seal message: %v \n", err)
+		return common.Hash{}
+	}
+
+	// 发送
+	err = shh.Send(envelope)
+	if err != nil {
+		fmt.Printf("failed to send message: %v \n", err)
+		return common.Hash{}
+	}
+
+	// Hash
+	return envelope.Hash()
+}
+
+// 循环消息体
+func messageLoop() {
+	f := shh.GetFilter(filterID)
+	if f == nil {
+		utils.Fatalf("filter is not installed")
+	}
+
+	ticker := time.NewTicker(time.Millisecond * 50)
+
+	for {
+		select {
+		case <-ticker.C:
+			messages := f.Retrieve()  // 接收消息
+			for _, msg := range messages {
+				printMessageInfo(msg)
+			}
+		case <-done:
+			return
+		}
+	}
+}
+
+// 打印消息
+func printMessageInfo(msg *whisper.ReceivedMessage) {
+	text := string(msg.Payload)
+	timestamp := time.Unix(int64(msg.Sent), 0).Format("2006-01-02 15:04:05")
+	var address common.Address
+	if msg.Src != nil {
+		address = crypto.PubkeyToAddress(*msg.Src)
+	}
+	if whisper.IsPubKeyEqual(msg.Src, &asymKey.PublicKey) {
+		fmt.Printf("\n%s <mine>: %s\n", timestamp, text) // message from myself
+	} else {
+		fmt.Printf("\n%s [%x]: %s\n", timestamp, address, text) // message from a peer
+	}
+}
+
+// 消息输入
+func scanLine(prompt string) string {
+	if len(prompt) > 0 {
+		fmt.Print(prompt)
+	}
+	txt, err := input.ReadString('\n')
+	if err != nil {
+		utils.Fatalf("input error: %s", err)
+	}
+	txt = strings.TrimRight(txt, "\n\r")
+	return txt
 }
