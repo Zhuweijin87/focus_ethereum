@@ -27,11 +27,11 @@ type Config struct {
     PrivateKey          *ecdsa.PrivateKey // 私钥信息
     MaxPeers            int   // 最大节点数
     MaxPendingPeers     int 
-    NoDiscovery         bool  // 设置节点是否曝露
+    NoDiscovery         bool  // 设置节点是否曝露
     DiscoveryV5         bool  // V5版探测节点协议
     DiscoveryV5Addr     string
     Name                string     // 当前节点的服务名称
-    BootstrapNodes      []*discover.Node // 启动节点, 可以选择默认的
+    BootstrapNodes      []*discover.Node // 启动节点, 可以选择默认的
     BootstrapNodesV5    []*discv5.Node   // V5 启动节点
     StaticNodes         []*discover.Node
     TrustedNodes        []*discover.Node
@@ -39,16 +39,16 @@ type Config struct {
     NodeDatabase        string      // 节点数据库
     Protocols           []Protocol  // 
     ListenAddr          string      // server监听的地址, 为空的话，由系统指定实际的IP地址
-    NAT                 nat.Interface // 本地的端口映射到对用的对外接入Internet的端口
+    NAT                 nat.Interface // 本地的端口映射到对用的对外接入Internet的端口
     Dialer              *net.Dialer  // 连接对外的对等节点，返回的是个连接
     NoDial              bool    // true: server不会连接任意节点,也不会去监听端口
 }
 ```
-+ 如果想把自己节点作为服务节点，可以设置 ListenAddr=X.X.X.X:PORT  
-    默认情况是下面MainnetBootnodes中的几个主要节点的配置  
++ 如果想把自己节点作为服务节点，可以设置 ListenAddr=X.X.X.X:PORT  
+    默认情况是下面MainnetBootnodes中的几个主要节点的配置  
 
-+ NAT:  Mapping Internet 结构
-    +  NAT-UPnP : 通用即插即用（Universal Plug and Play）的缩写，主要用于设备的智能互联互通，使用UPnP协议不需要设备驱动程序，它可以运行在目前几乎所有的操作系统平台上，使得在办公室、家庭和其他公共场所方便地构建设备互联互通成为可能。基于UDP协议。
++ NAT: Mapping Internet 结构
+    +  NAT-UPnP : 通用即插即用（Universal Plug and Play）的缩写，主要用于设备的智能互联互通，使用UPnP协议不需要设备驱动程序，它可以运行在目前几乎所有的操作系统平台上，使得在办公室、家庭和其他公共场所方便地构建设备互联互通成为可能。基于UDP协议。
     +  NAT-PMP : 路由器地址为网关地址， 如果为nil, 则会自动搜寻路由地址。
 
 P2P 协议相关 p2p/peer.go  
@@ -93,7 +93,7 @@ type Peer struct {
     disc        chan DiscReason
 }
 
-// 基于net.Conn 协议扩展
+// 基于net.Conn协议扩展
 type conn struct {
 	fd          net.Conn
 	transport
@@ -112,7 +112,7 @@ type Node struct {
     IP          net.IP // IPv4 IP 地址
     UDP         uint16  // UDP 端口
     TCP         uint16  // TCP 端口
-    ID          NodeID   // 每个节点的唯一标识(64 byte)， 使用椭圆曲线算出来的公钥
+    ID          NodeID   // 每个节点的唯一标识(64byte)， 使用椭圆曲线算出来的公钥
     sha         common.Hash
     contested   bool 
 }
@@ -151,7 +151,7 @@ var MainnetBootnodes = []string{
 	"enode://979b7fa28feeb35a4741660a16076f1943202cb72b6af70d327f053e248bab9ba81760f39d0701ef1d8f89cc1fbd2cacba0710a12cd5314d5e0c9021aa3637f9@5.1.83.226:30303", // DE
 }
 ```
-可以通过下面函数解析上面地址信息
+可以通过下面函数解析上面地址信息
 ```
 discover.MustParseNode(node)
 ```
@@ -163,7 +163,7 @@ discover.MustParseNode(node)
     + 191.235.84.50:30303 (不可PING)
     + 5.1.83.226:30303  (可PING)
 
-另外还有相关的测试节点 <br>
+另外还有相关的测试节点 <br>
 略
 
 P2P 协议信息
@@ -203,7 +203,7 @@ type Whisper struct {
 消息打包的参数信息 whisper/message.go
 ```
 type MessageParams struct {
-	TTL             uint32     // 允许消息alive的最长时间,默认50秒
+	TTL             uint32     // 允许消息alive的最长时间,默认50秒
 	Src             *ecdsa.PrivateKey   // 私钥 (个人)
 	Dst             *ecdsa.PublicKey    // 公约 (个人)
 	KeySym          []byte              // 
@@ -238,7 +238,6 @@ ecdsa.PrivateKey <br>
 ecdsa.PublicKey
 
 ```
-// 消息选择
 type Filter struct {
     Src             *ecdsa.PublicKey  // 发送消息者公钥
 	KeyAsym         *ecdsa.PrivateKey // 私钥
@@ -267,21 +266,21 @@ Filter : 用于接收消息
     + ListenUDP(): 启动本地监听服务
     + newUDP(): 实现本地IP到外网IP的转化(环回地址)接收peer返回
     + makeEndpoint() : 创建RPC接口
-    + loop(): 对udp连接实时跟踪处理
-    + readLoop(): 接收并处理UDP数据包
+    + loop(): 对udp连接实时跟踪处理
+    + readLoop(): 接收并处理UDP数据包
 
 + p2p/discovery/nat  
     NAT ip,端口的映射
 
 + p2p/message.go  
-消息读写相关的操作  
+消息读写相关的操作  
 
 + p2p/discovery/udp.go  
 节点探寻
     + ListenUDP(): 启动一个端口监听
         + newUDP(): 创建UDP
             + loop(): 
-            + readLoop(): 不断的获取读取数据，并根据数据信息:
+            + readLoop(): 不断的获取读取数据，并根据数据信息:
                 + ping
                 + pong
 
@@ -342,12 +341,12 @@ p2p/dail.go -> func newTasks()
 ```
 
 
-#### 消息传输实现
+#### 消息传输实现
 + whisper/whisper.go
     + add(): 发送消息的处理
         + 时间: 
         + wh.mailServer.Archive(envelope) : 数据包存档
-    + Start(): 启动节点的后台数据传输线程
+    + Start(): 启动节点的后台数据传输线程
 
 + whisper/doc.go
     + MailServer: 数据发送处理
