@@ -9,6 +9,24 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/discover"
 )
 
+func newProtocol() []p2p.Protocol {
+	protocol := p2p.Protocol {
+		Name:    "MyProtocol",
+		Version: 1,
+		Length:  10,
+		Run:     whisper.HandlePeer,
+		NodeInfo: func() interface{} {
+			return map[string]interface{}{
+				"version":        "Protocol_v0.5",
+				"maxMessageSize": 200,
+				"minimumPoW":     0.2,
+			}
+		},
+	}
+
+	return []p2p.Protocol{protocol}
+}
+
 func main() {
 	uniqueKey, _ := crypto.GenerateKey()
 	var peers []*discover.Node 
@@ -17,12 +35,12 @@ func main() {
 	peers = append(peers, peer)
 
 	server := p2p.Server {
-		Config: p2p.Config{
+		Config: p2p.Config {
 			PrivateKey: uniqueKey, // 必须(私钥)
 			Name: "MyP2PTest",
 			MaxPeers: 10,
-			Protocols: wsh.Protocols(), // P2P 协议信息
-			NAT: nat.Any(),  // NAT 协议
+			Protocols: newProtocol(), // P2P 协议信息
+			// NAT: nat.Any(),  // NAT 协议
 			BootstrapNodes: peers,
 			StaticNodes: peers,
 			TrustedNodes: peers,
@@ -34,4 +52,7 @@ func main() {
 		fmt.Println("fail to start")
 		return 
 	}
+
+	defer server.Stop()
+	select{}
 }
