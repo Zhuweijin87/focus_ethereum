@@ -59,7 +59,7 @@ func initialize() {
 	var err error
 	var asymKeyID string  // 公钥
 
-	//connect to mainnet
+	//连接默认的主节点
 	for _, node := range ethparams.MainnetBootnodes {
 		peer := discover.MustParseNode(node)
 		//fmt.Println(peer.IP, peer.TCP, peer.ID)

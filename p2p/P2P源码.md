@@ -41,7 +41,7 @@ type Config struct {
     ListenAddr          string      // server监听的地址, 为空的话，由系统指定实际的IP地址
     NAT                 nat.Interface // 本地的端口映射到对用的对外接入Internet的端口
     Dialer              *net.Dialer  // 连接对外的对等节点，返回的是个连接
-    NoDial              bool    // true: server不会连接任意节点
+    NoDial              bool    // true: server不会连接任意节点,也不会去监听端口
 }
 ```
 + 如果想把自己节点作为服务节点，可以设置 ListenAddr=X.X.X.X:PORT  
@@ -115,6 +115,25 @@ type Node struct {
     ID          NodeID   // 每个节点的唯一标识(64 byte)， 使用椭圆曲线算出来的公钥
     sha         common.Hash
     contested   bool 
+}
+```
+
+节点连接状态 p2p/dail.go
+```
+type dialstate struct {
+	maxDynDials     int            // 配置中的最大节点 + 1 / 2
+	ntab            discoverTable
+	netrestrict     *netutil.Netlist
+
+	lookupRunning   bool
+	dialing         map[discover.NodeID]connFlag
+	lookupBuf       []*discover.Node    // 当前发现的结果
+	randomNodes     []*discover.Node    // filled from Table
+	static          map[discover.NodeID]*dialTask
+	hist            *dialHistory
+
+	start     time.Time        // time when the dialer was first used
+	bootnodes []*discover.Node // default dials when there are no peers
 }
 ```
 
@@ -255,7 +274,72 @@ Filter : 用于接收消息
     NAT ip,端口的映射
 
 + p2p/message.go  
-消息相关的操作  
+消息读写相关的操作  
+
++ p2p/discovery/udp.go  
+节点探寻
+    + ListenUDP(): 启动一个端口监听
+        + newUDP(): 创建UDP
+            + loop(): 
+            + readLoop(): 不断的获取读取数据，并根据数据信息:
+                + ping
+                + pong
+
++ p2p/server.go
+```
+// 节点任务
+nt := dialstate.newTasks(len(runningTasks)+len(queuedTasks), peers, time.Now())
+```
+
++ p2p/dail.go  
+```
+// 连接各个节点
+func (t *dialTask) dial(srv *Server, dest *discover.Node) bool {
+	addr := &net.TCPAddr{IP: dest.IP, Port: int(dest.TCP)}
+	fmt.Println("dail: ", addr)
+	fd, err := srv.Dialer.Dial("tcp", addr.String())
+	if err != nil {
+		log.Trace("Dial error", "task", t, "err", err)
+		return false
+	}
+    // 连接计数
+	mfd := newMeteredConn(fd, false)
+    // 根据握手协议(加密握手, 协议握手)，设置连接节点
+	srv.setupConn(mfd, t.flags, dest)
+	return true
+}
+```
+
+p2p/dail.go -> func newTasks()
+```
+...
+// 根据static node 创建 dailer:
+	for id, t := range s.static {
+		fmt.Println("t dest: ", t.dest)
+		err := s.checkDial(t.dest, peers)
+		switch err {
+		case errNotWhitelisted, errSelf:
+			log.Warn("Removing static dial candidate", "id", t.dest.ID, "addr", &net.TCPAddr{IP: t.dest.IP, Port: int(t.dest.TCP)}, "err", err)
+			delete(s.static, t.dest.ID)
+		case nil:
+			s.dialing[id] = t.flags
+			newtasks = append(newtasks, t)
+		}
+	}
+...
+
+// 动态连接随机的服务节点(Config 中初始的节点)
+    randomCandidates := needDynDials / 2
+	if randomCandidates > 0 {
+		n := s.ntab.ReadRandomNodes(s.randomNodes)
+		for i := 0; i < randomCandidates && i < n; i++ {
+			if addDial(dynDialedConn, s.randomNodes[i]) {
+				needDynDials--
+			}
+		}
+	}
+
+```
 
 
 #### 消息传输实现
