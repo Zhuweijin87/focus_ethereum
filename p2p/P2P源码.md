@@ -44,8 +44,14 @@ type Config struct {
     NoDial              bool    // true: server不会连接任意节点
 }
 ```
++ 如果想把自己节点作为服务节点，可以设置 ListenAddr=X.X.X.X:PORT  
+    默认情况是下面MainnetBootnodes中的几个主要节点的配置  
 
-P2P 协议相关 p2p/peer.go
++ NAT:  Mapping Internet 结构
+    +  NAT-UPnP : 通用即插即用（Universal Plug and Play）的缩写，主要用于设备的智能互联互通，使用UPnP协议不需要设备驱动程序，它可以运行在目前几乎所有的操作系统平台上，使得在办公室、家庭和其他公共场所方便地构建设备互联互通成为可能。基于UDP协议。
+    +  NAT-PMP : 路由器地址为网关地址， 如果为nil, 则会自动搜寻路由地址。
+
+P2P 协议相关 p2p/peer.go  
 ```
 // P2P 握手协议
 type protoHandshake struct {
@@ -130,6 +136,14 @@ var MainnetBootnodes = []string{
 ```
 discover.MustParseNode(node)
 ```
++ 默认的节点IP  
+    + 182.254.155.208:33333  (不可PING)
+    + 52.16.188.185:30303   (不可PING)
+    + 13.93.211.84:30303  (不可PING)
+    + 52.74.57.123:30303  (可PING)
+    + 191.235.84.50:30303 (不可PING)
+    + 5.1.83.226:30303  (可PING)
+
 另外还有相关的测试节点 <br>
 略
 
@@ -145,7 +159,7 @@ type Protocol struct {
 }
 ```
 
-P2P 通信层相关的信息 whisper/whisper.go  
+P2P 通信层相关的信息(消息协议) whisper/whisper.go  
 ```
 type Whisper struct {
     protocol        p2p.Protocol   // 协议信息(描述，参数)
@@ -226,20 +240,30 @@ Filter : 用于接收消息
 
 #### P2P实现
 
-+ p2p/server.go
++ p2p/server.go  
+初始化P2P
     + Start() 
 
-+ p2p/discover/udp.go <br>
++ p2p/discover/udp.go  
     + ListenUDP(): 启动本地监听服务
     + newUDP(): 实现本地IP到外网IP的转化(环回地址)接收peer返回
     + makeEndpoint() : 创建RPC接口
-    + loop():
-    + readLoop(): 处理的接收的UDP数据包
+    + loop(): 对udp连接实时跟踪处理
+    + readLoop(): 接收并处理UDP数据包
 
++ p2p/discovery/nat  
+    NAT ip,端口的映射
+
++ p2p/message.go  
+消息相关的操作  
+
+
+#### 消息传输实现
 + whisper/whisper.go
     + add(): 发送消息的处理
         + 时间: 
         + wh.mailServer.Archive(envelope) : 数据包存档
+    + Start(): 启动节点的后台数据传输线程
 
 + whisper/doc.go
     + MailServer: 数据发送处理
