@@ -9,7 +9,7 @@
 
 #### 数据结构 
 服务信息 p2p/server.go
-```
+``` go
 type Server struct {
     Config      //配置文件
 
@@ -52,7 +52,7 @@ type Config struct {
     +  NAT-PMP : 路由器地址为网关地址， 如果为nil, 则会自动搜寻路由地址。
 
 P2P 协议相关 p2p/peer.go  
-```
+``` go
 // P2P 握手协议
 type protoHandshake struct {
     Version     uint64      // 协议版本
@@ -107,7 +107,7 @@ type conn struct {
 
 
 关于节点信息 p2p/discover/node.go
-```
+``` go
 type Node struct {
     IP          net.IP // IPv4 IP 地址
     UDP         uint16  // UDP 端口
@@ -119,7 +119,7 @@ type Node struct {
 ```
 
 节点连接状态 p2p/dail.go
-```
+``` go
 type dialstate struct {
 	maxDynDials     int            // 配置中的最大节点 + 1 / 2
 	ntab            discoverTable
@@ -138,7 +138,7 @@ type dialstate struct {
 ```
 
 以太坊默认的几个主节点 params/bootnodes.go <br>
-```
+``` go
 var MainnetBootnodes = []string{
 	// Ethereum Foundation Go Bootnodes
 	"enode://a979fb575495b8d6db44f750317d0f4622bf4c2aa3365d6af7c284339968eef29b69ad0dce72a4d8db5ebb4968de0e3bec910127f134779fbcb0cb6d3331163c@52.16.188.185:30303", // IE
@@ -152,7 +152,7 @@ var MainnetBootnodes = []string{
 }
 ```
 可以通过下面函数解析上面地址信息
-```
+``` go
 discover.MustParseNode(node)
 ```
 + 默认的节点IP  
@@ -167,7 +167,7 @@ discover.MustParseNode(node)
 略
 
 P2P 协议信息
-```
+``` go
 type Protocol struct {
     Name    string  //协议名称
     Version string  // 版本号
@@ -179,7 +179,7 @@ type Protocol struct {
 ```
 
 P2P 通信层相关的信息(消息协议) whisper/whisper.go  
-```
+``` go
 type Whisper struct {
     protocol        p2p.Protocol   // 协议信息(描述，参数)
     filters         *Filters        // 订阅消息相关
@@ -201,7 +201,7 @@ type Whisper struct {
 ```
 
 消息打包的参数信息 whisper/message.go
-```
+``` go
 type MessageParams struct {
 	TTL             uint32     // 允许消息alive的最长时间,默认50秒
 	Src             *ecdsa.PrivateKey   // 私钥 (个人)
@@ -217,7 +217,7 @@ type MessageParams struct {
 这里 TTL 可以认定为消息有效期，如果有效期过了，这会从网络中删除
 
 文本包 （传输过程中的数据包)
-```
+``` go
 type Envelope struct {
     Version         []byte  // 版本
 	Expiry          uint32  // 有效期
@@ -237,7 +237,7 @@ type Envelope struct {
 ecdsa.PrivateKey <br>
 ecdsa.PublicKey
 
-```
+``` go
 type Filter struct {
     Src             *ecdsa.PublicKey  // 发送消息者公钥
 	KeyAsym         *ecdsa.PrivateKey // 私钥
@@ -285,13 +285,13 @@ Filter : 用于接收消息
                 + pong
 
 + p2p/server.go
-```
+``` go
 // 节点任务
 nt := dialstate.newTasks(len(runningTasks)+len(queuedTasks), peers, time.Now())
 ```
 
 + p2p/dail.go  
-```
+``` go
 // 连接各个节点
 func (t *dialTask) dial(srv *Server, dest *discover.Node) bool {
 	addr := &net.TCPAddr{IP: dest.IP, Port: int(dest.TCP)}
@@ -310,7 +310,7 @@ func (t *dialTask) dial(srv *Server, dest *discover.Node) bool {
 ```
 
 p2p/dail.go -> func newTasks()
-```
+``` go
 ...
 // 根据static node 创建 dailer:
 	for id, t := range s.static {
