@@ -15,22 +15,24 @@ func main() {
 		Name: "Test",
 		Length: 5,
 		Run : func(peer *p2p.Peer, rw p2p.MsgReadWriter) error {
+			fmt.Println("Run Protocol")
 			if err := p2p.ExpectMsg(rw, 2, []uint{1}); err != nil {
 				fmt.Println("ExpectMsg 2:", err)
-				return err
+				return nil
 			}
 			if err := p2p.ExpectMsg(rw, 3, []uint{2}); err != nil {
 				fmt.Println("ExpectMsg 3:", err)
-				return err
+				return nil
 			}
 			if err := p2p.ExpectMsg(rw, 4, []uint{3}); err != nil {
 				fmt.Println("ExpectMsg 3:", err)
-				return err
+				return nil
 			}
 			return nil
 		},
 	}
 
+	// MyTestPeer 在mytest.go 文件中，用于测试
 	closer, rw, _, errc := p2p.MyTestPeer([]p2p.Protocol{proto})
 	defer closer()
 
