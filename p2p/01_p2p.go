@@ -38,7 +38,7 @@ func main() {
 		Config: p2p.Config {
 			PrivateKey: uniqueKey, // 必须(私钥)
 			Name: "MyP2PTest",
-			MaxPeers: 10,
+			MaxPeers: 4,
 			Protocols: newProtocol(), // P2P 协议信息
 			// NAT: nat.Any(),  // NAT 协议
 			BootstrapNodes: peers,
