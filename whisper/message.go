@@ -160,7 +160,7 @@ func MsgSeal() {
 
 // 消息填充
 func MsgPadding() {
-
+	
 }
 
 func RplEncode() {
