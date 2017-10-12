@@ -1,11 +1,5 @@
-### P2P 解析
+### P2P 数据结构
 -----------------
-
-#### P2P 目录结构
-+ discover/
-+ discv5/
-+ nat/
-+ netutil/
 
 #### 数据结构 
 服务信息 p2p/server.go
@@ -33,8 +27,8 @@ type Config struct {
     Name                string     // 当前节点的服务名称
     BootstrapNodes      []*discover.Node // 启动节点, 可以选择默认的
     BootstrapNodesV5    []*discv5.Node   // V5 启动节点
-    StaticNodes         []*discover.Node
-    TrustedNodes        []*discover.Node
+    StaticNodes         []*discover.Node  // 静态节点 
+    TrustedNodes        []*discover.Node  // 信任节点
     NetRestrict         *netutil.Netlist  // 限制IP, 只有主节点才能匹配到这些IP
     NodeDatabase        string      // 节点数据库
     Protocols           []Protocol  // 

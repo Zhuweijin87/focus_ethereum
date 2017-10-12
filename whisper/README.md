@@ -41,8 +41,8 @@ type ReceivedMessage struct {
 // 数据包过滤器
 type Filter struct {
 	Src        *ecdsa.PublicKey     // 消息发送者公钥
-	KeyAsym    *ecdsa.PrivateKey    // 消息接受者私钥
-	KeySym     []byte            // Topic相关的密钥
+	KeyAsym    *ecdsa.PrivateKey    // 消息接受者私钥 
+	KeySym     []byte            // Topic相关的密钥 
 	Topics     [][]byte          // 过滤消息包的Topic
 	PoW        float64           // 
 	AllowP2P   bool              // 是否基于P2P网络
@@ -51,7 +51,11 @@ type Filter struct {
 	Messages map[common.Hash]*ReceivedMessage  // 接收到所有消息包
 	mutex    sync.RWMutex
 }
+
 ```
++ 关于KeyAsym与KeySym说明   
+KeyAsym: 使用非对称密钥时，需要创建该私钥  
+KeySym: 使用对称密钥时，KeySym需要创建(一般都是随机采用生成)，通过crypto.Keccak256Hash(KeySym)算出SymKeyHash
 
 
 ```go
@@ -90,8 +94,36 @@ type Whisper struct {
 }
 ```
 
-### Filter规则
+```go
+type Envelope struct {
+	Version  []byte
+	Expiry   uint32
+	TTL      uint32   // 有效时长 
+	Topic    TopicType 
+	AESNonce []byte
+	Data     []byte   // 传输数据 
+	EnvNonce uint64   // Envelope 封装时，所计算的Nonce
 
-+ 消息体匹配  
-1. Filter.KeyAsym.PublicKey 与 RecievedMessage.Dst 匹配问题  
-2. Filter.Topic 与 RecievedMessage.Topic  
+	pow  float64     // 消息所包含的PoW
+	hash common.Hash // 
+}
+```
+
+### Filter Match规则
++ Envelope匹配
+1. Filter.PoW > 0, 且Envelope.pow < Filter.PoW 
+3. Envelope.Topic存在于Filter.Topic
+
++ RecievedMessage匹配  
+1. Filter.PoW > 0, 且Envelope.pow < RecievedMessage.PoW 
+2. Filter.Src != nil，且 Filter.Src == RecievedMessage.Src  
+3. Filter.KeyAsym.PublicKey 与 RecievedMessage.Dst 匹配问题  
+4. Filter.SymKeyHash 与 RecievedMessage 匹配问题
+5. 确认 Envelope.Topic存在于Filter.Topic 
+
+
+### whisper
++ Start() : 启动多个线程，并处理p2p消息队列和普通whisper消息队列  
++ Stop() : 关闭消息队列的处理  
++ Subscribe() : 订阅，主要是添加filter，filter.Install() 
++ Unsubscribe(): 取消订阅，删除filter，filter.Uninstall()
