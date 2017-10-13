@@ -47,6 +47,7 @@ func main() {
 	select {}
 }
 
+// 处理消息接收发送
 func MyHandler(peer *p2p.Peer, ws p2p.MsgReadWriter) error {
 	for {
 		msg, err := ws.ReadMsg()
