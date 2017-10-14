@@ -17,6 +17,7 @@ import (
 )
 
 var server *p2p.Server
+var quit chan struct{} 
 
 func main() {
 	// 创建一个whisper
@@ -34,6 +35,11 @@ func main() {
 		return
 	}
 
+	// 设置中心节点
+	var peers []*discover.Node
+	peer := discover.MustParseNode("enode://b89172e36cb79202dd0c0822d4238b7a7ddbefe8aa97489049c9afe68f71b10c5c9ce588ef9b5df58939f982c718c59243cc5add6cebf3321b88d752eac02626@182.254.155.208:33333")
+	peers = append(peers, peer)
+
 	// 定义P2P Server
 	server = &p2p.Server{
 		Config: p2p.Config{
@@ -41,7 +47,10 @@ func main() {
 			MaxPeers:   10,
 			Name:       common.MakeName("My Chat", "5.0"),
 			Protocols:  wsp.Protocols(), //使用whisper协议 
-			ListenAddr: ":30012",  // 如果不基于中心节点的P2P通信, 需要曝露此端口
+			NAT:            nat.Any(),
+			BootstrapNodes: peers,
+			StaticNodes:    peers,
+			TrustedNodes:   peers,
 		},
 	}
 
@@ -52,28 +61,23 @@ func main() {
 	}
 	defer server.Stop()
 
-	for {
-		buf := scanLine()
-		if buf == "nodeinfo" {
-			// TODO
-			node := server.Self()
-			fmt.Println("NodeInfo:", node.String())
-			continue
+
+	// 等待节点连接
+	waitCount := 100
+	var count int
+	var connected bool
+	for !connected {
+		time.Sleep(time.Millisecond * 500)
+		connected = server.PeerCount() > 0
+
+		if count > waitCount {
+			fmt.Println("Connect timeout, exit!")
+			return
 		}
-		if buf == "addpeer" {
-			fmt.Println("PeerNode::>")
-			ns := scanLine()
-			node := discover.MustParseNode(ns)
-			server.AddPeer(node)
-			if waitConnect(10) {
-				fmt.Println("Peer Connect OK")
-				break
-			} else {
-				fmt.Println("Peer Connect Fail")
-			}
-			continue
-		}
+		count++
 	}
+	fmt.Println("Connect to peer OK")
+
 
 	symkeyId, err := wsp.AddSymKeyFromPassword("123456")
 	if err != nil {
@@ -132,6 +136,8 @@ func RecvMessage(wsp *whisper.Whisper, filterId string, asymKey *ecdsa.PrivateKe
 				printMessage(msg, asymKey)
 			}
 		}
+		case <-quit:
+			return 
 	}
 }
 
@@ -152,23 +158,9 @@ func printMessage(msg *whisper.ReceivedMessage, asymKey *ecdsa.PrivateKey) {
 func SendMessage(wsp *whisper.Whisper, asymKey *ecdsa.PrivateKey, symKey []byte, topic whisper.TopicType) {
 	for {
 		buf := scanLine()
-		if buf == "nodeinfo" {
-			// TODO
-			node := server.Self()
-			fmt.Println("NodeInfo:", node.String())
-			continue
-		}
-		if buf == "addpeer" {
-			fmt.Println("PeerNode::>")
-			ns := scanLine()
-			node := discover.MustParseNode(ns)
-			server.AddPeer(node)
-			if waitConnect(10) {
-				fmt.Println("Peer Connect OK")
-			} else {
-				fmt.Println("Peer Connect Fail")
-			}
-			continue
+		if buf == "quit" {
+			quit <- struct{}{}
+			return 
 		}
 		sendMsg(wsp, []byte(buf), asymKey, symKey, topic)
 	}
