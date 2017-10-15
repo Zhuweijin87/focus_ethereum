@@ -44,6 +44,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 添加节点，用于扫描, 会添加到dialstate中的static
+	srv.AddPeer()
+
 	select {}
 }
 
@@ -63,7 +66,7 @@ func MyHandler(peer *p2p.Peer, ws p2p.MsgReadWriter) error {
 
 		switch myMessage {
 		case "foo":
-			err = p2p.SendItems(ws, messageId, "bar")
+			err = p2p.SendItems(ws, messageId, "bar") // 发送数据
 			if err != nil {
 				return err
 			}
