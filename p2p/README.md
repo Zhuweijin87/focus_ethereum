@@ -2,7 +2,7 @@
 -----------------
 
 #### 数据结构 
-服务信息 p2p/server.go
+server.go
 ``` go
 type Server struct {
     Config      //配置文件
@@ -51,7 +51,7 @@ type protoHandshake struct {
 	Rest []rlp.RawValue     // 兼容性数据
 }
 
-// 读写协议
+// 读写协议(对读写的封装)
 type protoRW struct {
 	Protocol
 	in          chan Msg        // 接收读进消息
@@ -149,7 +149,7 @@ type Protocol struct {
 ```
 
 ### message.go
-
+消息读写  
 ```go
 type MsgReadWriter interface {
 	MsgReader
@@ -163,5 +163,54 @@ type MsgWriter interface {
 
 type MsgReader interface {
 	ReadMsg() (Msg, error)
+}
+```
+
+### dail.go 
+```go
+type dialstate struct {
+	maxDynDials int   // 动态链接的最大数
+	ntab        discoverTable
+	netrestrict *netutil.Netlist
+
+	lookupRunning bool  
+	dialing       map[discover.NodeID]connFlag // 当前链接服务
+	lookupBuf     []*discover.Node // 当前查找的结果
+	randomNodes   []*discover.Node // 
+	static        map[discover.NodeID]*dialTask
+	hist          *dialHistory  // 链接历史揭露
+
+	start     time.Time        // 
+	bootnodes []*discover.Node // 如果没有要链接的节点时，默认的启动节点
+}
+
+// 
+type discoverTable interface {
+	Self() *discover.Node
+	Close()
+	Resolve(target discover.NodeID) *discover.Node
+	Lookup(target discover.NodeID) []*discover.Node
+	ReadRandomNodes([]*discover.Node) int
+}
+
+// 服务处理操作
+type task interface {
+	Do(*Server)
+}
+
+// 链接多的节点
+type pastDial struct {
+	id  discover.NodeID  // 节点ID
+	exp time.Time  // 过期时间
+}
+
+type connFlag int  // 链接标识 
+
+// 节点链接 
+type dialTask struct {
+	flags        connFlag  // 默认为 staticDialedConn
+	dest         *discover.Node // 链接的节点
+	lastResolved time.Time  // 
+	resolveDelay time.Duration
 }
 ```
