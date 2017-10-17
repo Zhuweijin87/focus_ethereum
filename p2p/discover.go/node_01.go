@@ -22,7 +22,8 @@ func main() {
 
 	
 	key, _ := crypto.GenerateKey()
-	nodeId = discover.PubkeyID(&key.PublicKey) // 将公钥转化节点ID
+	// 将公钥转化节点ID
+	nodeId = discover.PubkeyID(&key.PublicKey) 
 	//fmt.Println("NodeID: ",nodeId)
 	fmt.Println(nodeId.String())
 	fmt.Println(nodeId.GoString())
