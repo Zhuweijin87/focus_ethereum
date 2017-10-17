@@ -22,7 +22,7 @@ func main() {
 
 	
 	key, _ := crypto.GenerateKey()
-	nodeId = discover.PubkeyID(&key.PublicKey)
+	nodeId = discover.PubkeyID(&key.PublicKey) // 将公钥转化节点ID
 	//fmt.Println("NodeID: ",nodeId)
 	fmt.Println(nodeId.String())
 	fmt.Println(nodeId.GoString())
@@ -31,7 +31,7 @@ func main() {
 	// 全节点: IP不为nil，且不为组播地址或者未指定地址, UDP,TCP端口不为0，
 	node := discover.NewNode(nodeId, net.ParseIP("127.0.0.1"), 0, 3001)
 
-	fmt.Println(node.Incomplete())
+	fmt.Println(node.Incomplete()) // 是否为全节点
 	fmt.Println(node.String())  // 几点转化string
 
 }

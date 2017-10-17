@@ -82,9 +82,9 @@ type Peer struct {
 
 // 基于net.Conn协议扩展
 type conn struct {
-	fd          net.Conn
+	fd          net.Conn // 套接字
 	transport
-	flags       connFlag
+	flags       connFlag  // 链接标识
 	cont        chan error      // 
 	id          discover.NodeID // 节点ID
 	caps        []Cap           //
@@ -92,7 +92,7 @@ type conn struct {
 }
 ```
 
-``` go
+```go
 type Node struct {
     IP          net.IP // IPv4 IP 地址
     UDP         uint16  // UDP 端口
@@ -104,7 +104,7 @@ type Node struct {
 ```
 
 节点连接状态 p2p/dail.go
-``` go
+```go
 type dialstate struct {
 	maxDynDials     int            // 配置中的最大节点 + 1 / 2
 	ntab            discoverTable
@@ -137,7 +137,7 @@ discover.MustParseNode(node)
 略
 
 P2P 协议信息
-``` go
+```go
 type Protocol struct {
     Name    string  //协议名称
     Version string  // 版本号
@@ -212,5 +212,30 @@ type dialTask struct {
 	dest         *discover.Node // 链接的节点
 	lastResolved time.Time  // 
 	resolveDelay time.Duration
+}
+```
+
+### discover/table.go
+
+维护节点的表结构
+```go
+type Table struct {
+	mutex   sync.Mutex        // protects buckets, their content, and nursery
+	buckets [nBuckets]*bucket // index of known nodes by distance
+	nursery []*Node           // 托管节点
+	db      *nodeDB           // 已知节点的数据存储
+
+	refreshReq chan chan struct{}  // 刷新请求信号
+	closeReq   chan struct{}  // 关闭请求信号
+	closed     chan struct{}
+
+	bondmu    sync.Mutex
+	bonding   map[NodeID]*bondproc
+	bondslots chan struct{} // limits total number of active bonding processes
+
+	nodeAddedHook func(*Node) // for testing
+
+	net  transport
+	self *Node // 本地节点的信息元
 }
 ```
