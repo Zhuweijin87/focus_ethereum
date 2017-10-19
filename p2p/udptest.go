@@ -6,6 +6,17 @@ import (
 	"os"
 )
 
+type conn interface {
+	ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error)
+	WriteToUDP(b []byte, addr *net.UDPAddr) (n int, err error)
+	Close() error
+	LocalAddr() net.Addr
+}
+
+type UDP struct {
+	conn 
+}
+
 func main() {
 	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:8200")
 	if err != nil {
@@ -36,4 +47,8 @@ func main() {
 			}
 		}
 	}
+
+	var udp UDP 
+
+	udp.LocalAddr()
 }
