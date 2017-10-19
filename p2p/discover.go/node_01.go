@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p/discover"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // 关于NodeID的算法
@@ -35,4 +36,21 @@ func main() {
 	fmt.Println(node.Incomplete()) // 是否为全节点
 	fmt.Println(node.String())  // 几点转化string
 
+	// Node 编码
+	blob, err := rlp.EncodeToBytes(node)
+	if err != nil {
+		fmt.Println("fail to rlp encode bytes: ", err)
+		return 
+	}
+	fmt.Println("Node编码:", string(blob)) 
+
+	//Node 解码
+	var new discover.Node 
+	err = rlp.DecodeBytes(blob, &new)
+	if err != nil {
+		fmt.Println("fail to rlp decode byte: ", err)
+		return 
+	}
+
+	fmt.Println("Node解码:", new)
 }
