@@ -4,6 +4,7 @@ package main
 
 import "fmt"
 import "github.com/syndtr/goleveldb/leveldb"
+import "github.com/syndtr/goleveldb/leveldb/util"
 
 /* insert */
 func leveldb_put(db *leveldb.DB) {
@@ -28,11 +29,21 @@ func leveldb_iter(db *leveldb.DB) {
 	}
 }
 
+func leveldb_iter_key(key string, db *leveldb.DB) {
+	iter := db.NewIterator(nil, nil)
+	for ok := iter.Seek([]byte(key)); ok; ok = iter.Next() {
+		fmt.Println(iter.Key(), string(iter.Value()))
+	}
+	iter.Release()
+}
+
 func leveldb_get(key string, db *leveldb.DB) {
 	data, err := db.Get([]byte(key), nil)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	fmt.Println(data)
 }
 
 func leveldb_getlike(key_like string, db *leveldb.DB) {
@@ -76,6 +87,6 @@ func main() {
 
 	leveldb_put(db)
 
-	leveldb_iter(db)
-
+	//leveldb_iter(db)
+	leveldb_iter_key("key-82", db)
 }
