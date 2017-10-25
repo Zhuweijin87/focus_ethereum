@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p"
+	//"gitee.com/nerthus/nerthus/p2p"
 )
 
 const messageId = 0
@@ -45,7 +46,7 @@ func main() {
 	}
 
 	// 添加节点，用于扫描, 会添加到dialstate中的static
-	srv.AddPeer()
+	// srv.AddPeer()
 
 	select {}
 }
