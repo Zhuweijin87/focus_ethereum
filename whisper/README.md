@@ -1,5 +1,91 @@
 ## 数据结构说明 
 
+### whisper.go 
+p2p层之上的协议，用于p2p网络数据的传输。  
+
+首先看下whisper的数据结构
+```go
+type Whisper struct {
+	protocol p2p.Protocol   // 用于定义whisper的p2p协议
+	filters  *Filters       // 消息过滤器 
+
+	privateKeys map[string]*ecdsa.PrivateKey // 存储的私钥
+	symKeys     map[string][]byte            // 
+	keyMu       sync.RWMutex                 // 
+
+	poolMu      sync.RWMutex              // 读写锁
+	envelopes   map[common.Hash]*Envelope // 装载消息的信封
+	expirations map[uint32]*set.SetNonTS  // 
+
+	peerMu sync.RWMutex       // 节点锁
+	peers  map[*Peer]struct{} // 
+
+	messageQueue chan *Envelope // Message queue for normal whisper messages
+	p2pMsgQueue  chan *Envelope // Message queue for peer-to-peer messages 
+	quit         chan struct{}  // 
+	settings     syncmap.Map // 保存动态更改的配置设置: 如节点要求最小PoW, 最大消息大小，消息队列溢出提示等
+
+	statsMu sync.Mutex // guard stats
+	stats   Statistics // whisper节点统计信息
+
+	mailServer MailServer // 邮件服务, 基于邮件服务发送数据
+}
+```
+基本的配置  
+```go
+type Config struct {
+	MaxMessageSize     uint32    消息大小 (默认 1024 * 1024)
+	MinimumAcceptedPOW float64   接受最小的PoW (默认 0.2)
+}
+```
+主要函数说明:  
+* New(cfg Config) *Whisper : 创建一个用于p2p通信的whisper客户端  
+whisper中定义的协议  
+```go
+	whisper.protocol = p2p.Protocol{
+		Name:    ProtocolName,
+		Version: uint(ProtocolVersion),
+		Length:  NumberOfMessageCodes, (默认64)
+		Run:     whisper.HandlePeer,  // 主要处理p2p通信  
+		NodeInfo: func() interface{} {
+			return map[string]interface{}{
+				"version":        ProtocolVersionStr,
+				"maxMessageSize": whisper.MaxMessageSize(),
+				"minimumPoW":     whisper.MinPow(),
+			}
+		},
+	}
+```
+* Start(*p2p.Server) error : 启动whisper  
+这个函数自带的参数是p2p服务，也就是说它是适用于p2p服务的。主要处理消息队列中的数据。 
+也就是whisper结构体中的messageQueue，p2pMsgQueue。  
+
+* Stop() : 关闭whisper 
+
++ HandlePeer(peer *p2p.Peer, rw p2p.MsgReadWriter) : whisper定义的协议  
+创建对等节点， 
+具体处理逻辑参考peer.go  
+
++ RegisterServer(server MailServer) : 注册邮件服务  
+归档，备份数据处理  
+
+### peer.go 
+基于whisper协议对等节点(与之对应的p2p的对等节点)  
+
+基本数据结构  
+```go
+type Peer struct {
+	host    *Whisper  // whisper协议
+	peer    *p2p.Peer 
+	ws      p2p.MsgReadWriter // p2p读写
+	trusted bool
+
+	known *set.Set // Messages already known by the peer to avoid wasting bandwidth
+
+	quit chan struct{}
+}
+```
+
 ```go
 // 消息体数据(不含加密，签名)
 type MessageParams struct {
@@ -36,7 +122,7 @@ type ReceivedMessage struct {
 	EnvelopeVersion uint64
 }
 ```
-
+  
 ```go
 // 数据包过滤器
 type Filter struct {
@@ -66,33 +152,7 @@ type Filters struct {
 }
 ```
 
-```go
-type Whisper struct {
-	protocol p2p.Protocol   // p2p协议
-	filters  *Filters     // 消息过滤器
 
-	privateKeys map[string]*ecdsa.PrivateKey // 存储的私钥
-	symKeys     map[string][]byte            // 
-	keyMu       sync.RWMutex                 // 
-
-	poolMu      sync.RWMutex              // 
-	envelopes   map[common.Hash]*Envelope // 装载消息的信封
-	expirations map[uint32]*set.SetNonTS  // 
-
-	peerMu sync.RWMutex       // 
-	peers  map[*Peer]struct{} // 
-
-	messageQueue chan *Envelope // Message queue for normal whisper messages
-	p2pMsgQueue  chan *Envelope // Message queue for peer-to-peer messages 
-	quit         chan struct{}  // 
-	settings     syncmap.Map // 保存动态更改的配置设置: 如节点要求最小PoW, 最大消息大小，消息队列溢出提示等
-
-	statsMu sync.Mutex // guard stats
-	stats   Statistics // whisper节点统计信息
-
-	mailServer MailServer // 邮件服务, 基于邮件服务发送数据
-}
-```
 
 ```go
 type Envelope struct {
@@ -127,3 +187,4 @@ type Envelope struct {
 + Stop() : 关闭消息队列的处理  
 + Subscribe() : 订阅，主要是添加filter，filter.Install() 
 + Unsubscribe(): 取消订阅，删除filter，filter.Uninstall()
+
