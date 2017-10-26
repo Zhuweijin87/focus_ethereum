@@ -1,22 +1,24 @@
-### P2P 数据结构
+### P2P 代码解析
 -----------------
 
-#### 数据结构 
-server.go
+#### server.go  
+p2p服务，整个p2p初始的结构  
+
+首先是它的结构部分 
 ``` go
 type Server struct {
     Config      //配置文件
-
     // 一些初始化的内部数据
     newTransport    func(net.Conn) transport  //传输协议
-    newPeerHook     func(*Peer)
+    newPeerHook     func(*Peer)  
 
-    lock            sync.Mutex
-    ntab            discoverTable
+    lock            sync.Mutex  // 锁 
+    ntab            discoverTable  // 保存节点信息的表，用于搜索
     ourHandshake    *protoHandshake  // 握手协议
 }
-
-// 配置信息
+```
+配置信息(很重要) 
+```go 
 type Config struct {
     PrivateKey          *ecdsa.PrivateKey // 私钥信息
     MaxPeers            int   // 最大节点数
