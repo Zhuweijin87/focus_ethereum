@@ -26,7 +26,7 @@ func MyProtocol() p2p.Protocol {
 func main() {
 	nodekey, _ := crypto.GenerateKey() // 生成密钥
 	config := p2p.Config{
-		MaxPeers:   2,
+		MaxPeers:   2,  
 		PrivateKey: nodekey,  // 当前节点的密钥，必须
 		Name:       "MyP2PServer",
 		ListenAddr: ":3001",
