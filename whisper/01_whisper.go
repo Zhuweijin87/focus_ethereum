@@ -7,6 +7,7 @@ import (
 )
 
 // whisper 初步使用 
+// 什么也不用添加
 func main() {
 	// 使用默认的配置 
 	wsp := whisper.New(nil) 

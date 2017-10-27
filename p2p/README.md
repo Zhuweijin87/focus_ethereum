@@ -8,13 +8,30 @@ p2p服务，整个p2p初始的结构
 ``` go
 type Server struct {
     Config      //配置文件
-    // 一些初始化的内部数据
-    newTransport    func(net.Conn) transport  //传输协议
-    newPeerHook     func(*Peer)  
 
-    lock            sync.Mutex  // 锁 
-    ntab            discoverTable  // 保存节点信息的表，用于搜索
-    ourHandshake    *protoHandshake  // 握手协议
+    newTransport func(net.Conn) transport // 传输接口
+	newPeerHook  func(*Peer)
+
+	lock    sync.Mutex // protects running
+	running bool
+
+	ntab         discoverTable  // 节点动态存储的表，用于快速搜索
+	listener     net.Listener   // 作为服务的监听接口
+	ourHandshake *protoHandshake  // 握手协议
+	lastLookup   time.Time  // 最后一次节点探测
+	DiscV5       *discv5.Network  // discovery V5的网络
+
+	// These are for Peers, PeerCount (and nothing else).
+	peerOp     chan peerOpFunc  // peer 处理的函数
+	peerOpDone chan struct{}
+
+	quit          chan struct{}  // 服务退出通知
+	addstatic     chan *discover.Node  // 添加节点通知
+	removestatic  chan *discover.Node  // 删除节点通知
+	posthandshake chan *conn
+	addpeer       chan *conn   // 添加peer的通知
+	delpeer       chan peerDrop
+	loopWG        sync.WaitGroup // loop, listenLoop
 }
 ```
 配置信息(很重要) 
@@ -40,6 +57,18 @@ type Config struct {
     NoDial              bool    // true: server不会连接任意节点,也不会去监听端口
 }
 ```
+
+主要函数说明:  
+* Start() error: 启动p2p服务  
+这里会检测一侧配置参数，初始化一些信号通知，对整个网络的通知的处理  
+
+* AddPeer(node *discover.Node) : 添加节点，主要通过RPC调用  
+
+* Peers() : 获取当前对等节点，通过RPC调用  
+
+* RemovePeer() : 删除节点，通过RPC调用  
+
+* Self() *discover.Node : 获取节点本身的信息  
 
 ``` go
 // P2P 握手协议

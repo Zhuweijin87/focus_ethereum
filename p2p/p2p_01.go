@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p"
-	//"gitee.com/nerthus/nerthus/p2p"
 )
 
 const messageId = 0
@@ -19,19 +18,19 @@ func MyProtocol() p2p.Protocol {
 		Name:    "MyProtocol",
 		Version: 1,
 		Length:  1,
-		Run:     MyHandler,
+		Run:     MyHandler,  // 通信处理
 	}
 }
 
+// 基本的P2P处理
 func main() {
 	nodekey, _ := crypto.GenerateKey() // 生成密钥
 	config := p2p.Config{
 		MaxPeers:   2,
-		PrivateKey: nodekey,
+		PrivateKey: nodekey,  // 当前节点的密钥，必须
 		Name:       "MyP2PServer",
 		ListenAddr: ":3001",
-		Protocols:  []p2p.Protocol{MyProtocol()},
-		//NoDial: true,  
+		Protocols:  []p2p.Protocol{MyProtocol()}, 
 	}
 
 	srv := &p2p.Server{
@@ -45,16 +44,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	defer srv.Stop()
 	// 添加节点，用于扫描, 会添加到dialstate中的static
 	// srv.AddPeer()
 
 	select {}
 }
 
-// 处理消息接收发送
+// 处理通信数据
 func MyHandler(peer *p2p.Peer, ws p2p.MsgReadWriter) error {
 	for {
-		msg, err := ws.ReadMsg()
+		msg, err := ws.ReadMsg()  // 读取消息
 		if err != nil {
 			return err
 		}
