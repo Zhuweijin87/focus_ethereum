@@ -44,3 +44,39 @@ type udp struct {
 	*Table
 }
 ```
+
+### table.go 
+
+存放节点的表
+```go
+type Table struct {
+	mutex   sync.Mutex        // protects buckets, their content, and nursery
+	buckets [nBuckets]*bucket // index of known nodes by distance
+	nursery []*Node           // bootstrap nodes
+	db      *nodeDB           // database of known nodes
+
+	refreshReq chan chan struct{}  // 
+	closeReq   chan struct{}
+	closed     chan struct{}
+
+	bondmu    sync.Mutex
+	bonding   map[NodeID]*bondproc
+	bondslots chan struct{} // limits total number of active bonding processes
+
+	nodeAddedHook func(*Node) // for testing
+
+	net  transport
+	self *Node // metadata of the local node
+}
+```
+
+主要接口实现：  
++ Self() *discover.Node  自身节点  
+
++ Close()  
+
++ Resolve(target discover.NodeID) *discover.Node  
+
++ Lookup(target discover.NodeID) []*discover.Node  搜寻节点  
+
++ ReadRandomNodes([]*discover.Node) int  读取随机节点  

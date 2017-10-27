@@ -15,7 +15,7 @@ type Server struct {
 	lock    sync.Mutex // protects running
 	running bool
 
-	ntab         discoverTable  // 节点动态存储的表，用于快速搜索
+	ntab         discoverTable  // 节点动态存储的表，用于快速搜索 其关联的结构discovery.Table
 	listener     net.Listener   // 作为服务的监听接口
 	ourHandshake *protoHandshake  // 握手协议
 	lastLookup   time.Time  // 最后一次节点探测
@@ -70,6 +70,7 @@ type Config struct {
 
 * Self() *discover.Node : 获取节点本身的信息  
 
+* 
 ``` go
 // P2P 握手协议
 type protoHandshake struct {
