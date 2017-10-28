@@ -12,7 +12,7 @@ type Server struct {
     newTransport func(net.Conn) transport // 传输接口
 	newPeerHook  func(*Peer)
 
-	lock    sync.Mutex // protects running
+	lock    sync.Mutex // 保护运行的节点
 	running bool
 
 	ntab         discoverTable  // 节点动态存储的表，用于快速搜索 其关联的结构discovery.Table
