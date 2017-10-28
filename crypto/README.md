@@ -21,3 +21,7 @@
 
 + Keccak256Hash(data ...[]byte) (h common.Hash)  
 
+关于椭圆曲线加密说明： http://8btc.com/article-138-1.html  
+secp256k1: 椭圆曲线密码 
+Keccak256: 基于SHA-256的散列算法  
+Keccak512: 基于SHA-512的散列算法  

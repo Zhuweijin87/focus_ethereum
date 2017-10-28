@@ -31,7 +31,7 @@ type Server struct {
 	posthandshake chan *conn
 	addpeer       chan *conn   // 添加peer的通知
 	delpeer       chan peerDrop
-	loopWG        sync.WaitGroup // loop, listenLoop
+	loopWG        sync.WaitGroup //  listen Loop
 }
 ```
 配置信息(很重要) 
@@ -63,6 +63,7 @@ type Config struct {
 这里会检测一侧配置参数，初始化一些信号通知，对整个网络的通知的处理  
 
 * AddPeer(node *discover.Node) : 添加节点，主要通过RPC调用  
+peer 将会添加到 dialstatic.static 存储中，然后在创建newTasks时，会检验这些节点的连接状态，如果连接没问题则连接保存起来，否则删除这个节点。  
 
 * Peers() : 获取当前对等节点，通过RPC调用  
 
@@ -70,7 +71,13 @@ type Config struct {
 
 * Self() *discover.Node : 获取节点本身的信息  
 
-* 
+! 内部函数  
+* run(dialstate dialer)  不断的扫描节点，更新节点的状态（是否联通）  
+	+ scheduleTasks: 任务调度器，将可能的节点添加到任务队列中   
+	+ startTasks(): 启动并执行任务  
+	+ delTask() : 删除任务  
+
+
 ``` go
 // P2P 握手协议
 type protoHandshake struct {
@@ -202,7 +209,7 @@ type MsgReader interface {
 ```go
 type dialstate struct {
 	maxDynDials int   // 动态链接的最大数
-	ntab        discoverTable
+	ntab        discoverTable  // 节点探测表 
 	netrestrict *netutil.Netlist
 
 	lookupRunning bool  
@@ -216,7 +223,7 @@ type dialstate struct {
 	bootnodes []*discover.Node // 如果没有要链接的节点时，默认的启动节点
 }
 
-// 
+// 探测节点存储的表操作
 type discoverTable interface {
 	Self() *discover.Node
 	Close()
@@ -225,7 +232,7 @@ type discoverTable interface {
 	ReadRandomNodes([]*discover.Node) int
 }
 
-// 服务处理操作
+// 服务处理操作，p2p.Server启动后，调度任务是，会按照介个借口处理
 type task interface {
 	Do(*Server)
 }
