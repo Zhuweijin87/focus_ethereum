@@ -71,6 +71,8 @@ peer 将会添加到 dialstatic.static 存储中，然后在创建newTasks时�
 
 * Self() *discover.Node : 获取节点本身的信息  
 
+* NodeInfo() : 节点信息, RPC调用  
+
 ! 内部函数  
 * run(dialstate dialer)  不断的扫描节点，更新节点的状态（是否联通）  
 	+ scheduleTasks: 任务调度器，将可能的节点添加到任务队列中   

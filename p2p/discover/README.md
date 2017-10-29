@@ -40,8 +40,7 @@ type udp struct {
 	closing    chan struct{}  // 关闭信号
 	nat     nat.Interface
 
-	// 继承table
-	*Table
+	*Table   // 节点存储表
 }
 ```
 
@@ -80,3 +79,13 @@ type Table struct {
 + Lookup(target discover.NodeID) []*discover.Node  搜寻节点  
 
 + ReadRandomNodes([]*discover.Node) int  读取随机节点  
+
+
+### node.go 
+节点信息  
+
++ NewnNode() : 顾名思义，创建一个节点  
+
++ Incomplete() : 无IP的节点 
+
++ String() 
