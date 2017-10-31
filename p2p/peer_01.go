@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"time"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/p2p"
+	"time"
 )
 
 var errProtocolReturned = errors.New("protocol returned")
@@ -17,17 +17,17 @@ func main() {
 		Run: func(peer *p2p.Peer, rw p2p.MsgReadWriter) error {
 			if err := p2p.ExpectMsg(rw, 2, []uint{1}); err != nil {
 				fmt.Println(err)
-				return err 
+				return err
 			}
 			fmt.Println("Expect Msg 2")
 			if err := p2p.ExpectMsg(rw, 3, []uint{2}); err != nil {
 				fmt.Println(err)
-				return err 
+				return err
 			}
 			fmt.Println("Expect Msg 3")
 			if err := p2p.ExpectMsg(rw, 4, []uint{3}); err != nil {
 				fmt.Println(err)
-				return err 
+				return err
 			}
 			fmt.Println("Expect Msg 4")
 			return nil

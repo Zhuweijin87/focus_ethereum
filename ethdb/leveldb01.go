@@ -8,7 +8,7 @@ import "github.com/syndtr/goleveldb/leveldb/util"
 
 /* insert */
 func leveldb_put(db *leveldb.DB) {
-	for i:=0; i<10; i++ {
+	for i := 0; i < 10; i++ {
 		db.Put([]byte(fmt.Sprintf("key-%d", i)), []byte(fmt.Sprintf("A-Value-%02d", i)), nil)
 	}
 }
@@ -80,7 +80,7 @@ func main() {
 	db, err := leveldb.OpenFile("./test.db", nil)
 	if err != nil {
 		fmt.Println("fail to open LevelDB:", err)
-		return 
+		return
 	}
 
 	fmt.Printf("db type: %T\n", db)

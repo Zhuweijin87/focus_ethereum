@@ -1,12 +1,11 @@
 package main
 
-
 import (
 	"fmt"
-	mrand "math/rand"
 	"github.com/ethereum/go-ethereum/crypto"
-	wsp "github.com/ethereum/go-ethereum/whisper/whisperv5"
 	"github.com/ethereum/go-ethereum/rlp"
+	wsp "github.com/ethereum/go-ethereum/whisper/whisperv5"
+	mrand "math/rand"
 )
 
 const (
@@ -20,19 +19,19 @@ func generateMessageParams() (*wsp.MessageParams, error) {
 	sz := mrand.Intn(400)
 
 	//Options specifies the exact way a message should be wrapped into an Envelope
-	var p wsp.MessageParams 
+	var p wsp.MessageParams
 
-	p.PoW = 0.01 
+	p.PoW = 0.01
 	p.WorkTime = 1
-	p.TTL = uint32(mrand.Intn(1024))  // 有效时间 
-	p.Payload = make([]byte, sz) // 传输的数据
+	p.TTL = uint32(mrand.Intn(1024))      // 有效时间
+	p.Payload = make([]byte, sz)          // 传输的数据
 	p.KeySym = make([]byte, aesKeyLength) // 32位， 对称密钥
-	mrand.Read(p.Payload)  // 随机产生数据
-	mrand.Read(p.KeySym)   // 随机产生对称密钥
+	mrand.Read(p.Payload)                 // 随机产生数据
+	mrand.Read(p.KeySym)                  // 随机产生对称密钥
 	p.Topic = wsp.BytesToTopic(buf)
 
 	var err error
-	p.Src, err = crypto.GenerateKey()  // 私钥
+	p.Src, err = crypto.GenerateKey() // 私钥
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +42,10 @@ func generateMessageParams() (*wsp.MessageParams, error) {
 // Envelope 信息
 func ShowEnvelop(env *wsp.Envelope) {
 	fmt.Println("Version:", env.Version)
-	fmt.Println("Expiry:", env.Expiry)  // 当前时间 + TTL(有效期)
+	fmt.Println("Expiry:", env.Expiry) // 当前时间 + TTL(有效期)
 	fmt.Println("TTL:", env.TTL)
 	fmt.Println("Topic:", env.Topic)
-	fmt.Printf("AESNonce: %x\n", env.AESNonce)  // 对称加密 通过params.KeySym 对称密钥
+	fmt.Printf("AESNonce: %x\n", env.AESNonce) // 对称加密 通过params.KeySym 对称密钥
 	fmt.Printf("Data: %x\n", env.Data)
 	fmt.Println("EnvNonce: ", env.EnvNonce)
 }
@@ -61,25 +60,25 @@ func MsgWrap() {
 	params, err := generateMessageParams()
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	// 创建一个初始的没有签名，没有加密的消息(参数)
 	msg, err := wsp.NewSentMessage(params) // msg 为[]byte
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
-	params.TTL = 1  // 最长时间
+	params.TTL = 1 // 最长时间
 	params.WorkTime = 12
-	params.PoW = target  // 工作量 
+	params.PoW = target // 工作量
 
-	// 将消息体打包如信封，用于在p2p网络传输 
-	env, err := msg.Wrap(params) 
-	if err != nil { 
+	// 将消息体打包如信封，用于在p2p网络传输
+	env, err := msg.Wrap(params)
+	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	ShowEnvelop(env)
@@ -91,13 +90,13 @@ func MsgWrap() {
 	fmt.Println("PoW:", pow)
 
 	// 算Hash
-	hash := env.Hash() 
+	hash := env.Hash()
 	fmt.Println("Hash:", hash)
 
 	msg2, err := wsp.NewSentMessage(params)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	// 设置参数过大
@@ -108,9 +107,9 @@ func MsgWrap() {
 	_, err = msg2.Wrap(params)
 	if err == nil {
 		fmt.Println("unexpectedly reached the PoW target with seed %d", seed)
-		return 
+		return
 	}
-	
+
 }
 
 func MsgSeal() {
@@ -121,13 +120,13 @@ func MsgSeal() {
 	params, err := generateMessageParams()
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	msg, err := wsp.NewSentMessage(params)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	params.TTL = 1
@@ -138,7 +137,7 @@ func MsgSeal() {
 	env := wsp.NewEnvelope(params.TTL, params.Topic, aesnonce, msg)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	ShowEnvelop(env)
@@ -146,13 +145,13 @@ func MsgSeal() {
 	env.Expiry = uint32(seed)
 	target := 32.0
 	params.WorkTime = 4
-	params.PoW = target 
+	params.PoW = target
 	env.Seal(params)
 
 	pow := env.PoW()
 	if pow < target {
 		fmt.Println("failed Wrap with seed %d: pow < target (%f vs. %f).", seed, pow, target)
-		return 
+		return
 	}
 
 	fmt.Println("PoW: ", pow)
@@ -160,7 +159,7 @@ func MsgSeal() {
 
 // 消息填充
 func MsgPadding() {
-	
+
 }
 
 func RplEncode() {
@@ -171,36 +170,36 @@ func RplEncode() {
 	params, err := generateMessageParams()
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	msg, err := wsp.NewSentMessage(params)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	env, err := msg.Wrap(params)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	// RLP 编码
 	raw, err := rlp.EncodeToBytes(env)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	//fmt.Println("Encode Raw:", raw)
 
 	// RLP 解码
-	var  decoded wsp.Envelope 
+	var decoded wsp.Envelope
 	err = rlp.DecodeBytes(raw, &decoded)
 	if err != nil {
 		fmt.Println("解码失败")
-		return 
+		return
 	}
 
 	he := env.Hash()
@@ -208,7 +207,7 @@ func RplEncode() {
 
 	if he != hd {
 		fmt.Println("编码-解码校验失败")
-		return 
+		return
 	}
 
 	fmt.Println("编码-解码成功")

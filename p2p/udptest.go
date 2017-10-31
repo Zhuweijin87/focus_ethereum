@@ -14,14 +14,14 @@ type conn interface {
 }
 
 type UDP struct {
-	conn 
+	conn
 }
 
 func main() {
 	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:8200")
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	fmt.Println(addr)
@@ -29,7 +29,7 @@ func main() {
 	lsn, err := net.ListenUDP("udp4", addr)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	defer lsn.Close()
@@ -48,7 +48,7 @@ func main() {
 		}
 	}
 
-	var udp UDP 
+	var udp UDP
 
 	udp.LocalAddr()
 }

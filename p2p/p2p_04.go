@@ -40,8 +40,8 @@ func main() {
 			PrivateKey: asymKey,
 			MaxPeers:   10,
 			Name:       common.MakeName("My Chat", "5.0"),
-			Protocols:  wsp.Protocols(), //使用whisper协议 
-			ListenAddr: ":30012",  // 如果不基于中心节点的P2P通信, 需要曝露此端口
+			Protocols:  wsp.Protocols(), //使用whisper协议
+			ListenAddr: ":30012",        // 如果不基于中心节点的P2P通信, 需要曝露此端口
 		},
 	}
 

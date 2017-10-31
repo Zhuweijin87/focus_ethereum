@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"net"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/rpc"
+	"net"
 )
 
 type Service struct{}
@@ -31,17 +31,17 @@ func (s *Service) EchoWithCtx(ctx context.Context, str string, i int, args *Args
 func main() {
 	serv := rpc.NewServer()
 	service := new(Service)
-	
+
 	err := serv.RegisterName("calc", service)
 	if err != nil {
 		fmt.Println("fail to register name")
-		return 
+		return
 	}
-/*
-	svc, ok := serv.services["calc"]
-	if !ok {
-		fmt.Println("Expected service calc to be registered")
-	}
+	/*
+		svc, ok := serv.services["calc"]
+		if !ok {
+			fmt.Println("Expected service calc to be registered")
+		}
 	*/
 
 	stringArg := "string arg"

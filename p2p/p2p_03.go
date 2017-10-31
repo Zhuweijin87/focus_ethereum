@@ -22,7 +22,6 @@ import (
 
 const quitCommand = "~Q"
 
-
 var (
 	server *p2p.Server
 	shh    *whisper.Whisper
@@ -37,7 +36,6 @@ var (
 	topic    whisper.TopicType
 	filterID string
 )
-
 
 var (
 	argVerbosity = flag.Int("verbosity", int(log.LvlInfo), "log verbosity level")
@@ -57,7 +55,7 @@ func initialize() {
 	done = make(chan struct{})
 	var peers []*discover.Node
 	var err error
-	var asymKeyID string  // 公钥
+	var asymKeyID string // 公钥
 
 	//连接默认的主节点
 	for _, node := range ethparams.MainnetBootnodes {
@@ -151,7 +149,7 @@ func SubscribeMessage() {
 	if err != nil {
 		utils.Fatalf("Failed to install filter: %s", err)
 	}
-	fmt.Println("Subscribe Id: ", filterID )
+	fmt.Println("Subscribe Id: ", filterID)
 }
 
 // 等待连接
@@ -243,7 +241,7 @@ func messageLoop() {
 	for {
 		select {
 		case <-ticker.C:
-			messages := f.Retrieve()  // 接收消息
+			messages := f.Retrieve() // 接收消息
 			for _, msg := range messages {
 				printMessageInfo(msg)
 			}

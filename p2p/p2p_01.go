@@ -18,7 +18,7 @@ func MyProtocol() p2p.Protocol {
 		Name:    "MyProtocol",
 		Version: 1,
 		Length:  1,
-		Run:     MyHandler,  // 通信处理
+		Run:     MyHandler, // 通信处理
 	}
 }
 
@@ -27,10 +27,10 @@ func main() {
 	nodekey, _ := crypto.GenerateKey() // 生成密钥
 	config := p2p.Config{
 		MaxPeers:   2,
-		PrivateKey: nodekey,  // 当前节点的密钥，必须
+		PrivateKey: nodekey, // 当前节点的密钥，必须
 		Name:       "MyP2PServer",
 		ListenAddr: ":3001",
-		Protocols:  []p2p.Protocol{MyProtocol()}, 
+		Protocols:  []p2p.Protocol{MyProtocol()},
 	}
 
 	srv := &p2p.Server{
@@ -54,7 +54,7 @@ func main() {
 // 处理通信数据
 func MyHandler(peer *p2p.Peer, ws p2p.MsgReadWriter) error {
 	for {
-		msg, err := ws.ReadMsg()  // 读取消息
+		msg, err := ws.ReadMsg() // 读取消息
 		if err != nil {
 			return err
 		}

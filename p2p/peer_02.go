@@ -17,7 +17,7 @@ func randomID() (id discover.NodeID) {
 
 // 简单Peer创建
 func SimplePeer() {
-	var id discover.NodeID 
+	var id discover.NodeID
 	caps := []p2p.Cap{{"foo", 2}, {"bar", 3}}
 	id = randomID()
 	peer := p2p.NewPeer(id, "MyPeer", caps)
@@ -26,7 +26,7 @@ func SimplePeer() {
 
 func NormalPeer() {
 	protocol := p2p.Protocol{
-		Name: "Normal Peer",
+		Name:   "Normal Peer",
 		Length: 5,
 		Run: func(peer *p2p.Peer, rw *p2p.MsgReadWriter) error {
 

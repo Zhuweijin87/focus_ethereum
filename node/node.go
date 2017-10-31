@@ -10,17 +10,17 @@ import (
 
 type MyService struct{}
 
-func (ms *MyService) Protocols() []p2p.Protocol {return nil}
-func (ms *MyService) APIs() []rpc.API { return nil }
-func (ms *MyService) Start(*p2p.Server) error { fmt.Println("Service starting..."); return nil }
-func (ms *MyService) Stop() error { fmt.Println("Service stopping"); return nil }
+func (ms *MyService) Protocols() []p2p.Protocol { return nil }
+func (ms *MyService) APIs() []rpc.API           { return nil }
+func (ms *MyService) Start(*p2p.Server) error   { fmt.Println("Service starting..."); return nil }
+func (ms *MyService) Stop() error               { fmt.Println("Service stopping"); return nil }
 
 func main() {
-	// 创建一个节点 
+	// 创建一个节点
 	stack, err := node.New(&node.Config{})
 	if err != nil {
 		fmt.Println("new node:", err)
-		return 
+		return
 	}
 
 	constructor := func(context *node.ServiceContext) (node.Service, error) {
@@ -30,21 +30,21 @@ func main() {
 	// 注册一个服务
 	if err := stack.Register(constructor); err != nil {
 		fmt.Println("Fail to register: ", err)
-		return 
+		return
 	}
 
 	if err := stack.Start(); err != nil {
 		fmt.Println("fail to start: ", err)
-		return 
+		return
 	}
 
 	if err := stack.Restart(); err != nil {
 		fmt.Println("fail to restart: ", err)
-		return 
+		return
 	}
 
 	if err := stack.Stop(); err != nil {
 		fmt.Println("Fail to stop: ", err)
-		return 
+		return
 	}
 }

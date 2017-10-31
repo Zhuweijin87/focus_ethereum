@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
+	"os"
 	_ "strings"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -13,7 +13,7 @@ import (
 )
 
 func tmpKeyStore(encrypt bool) (string, *keystore.KeyStore) {
-	d, err := ioutil.TempDir("", "eth-keystore-test")  // 创建临时文件
+	d, err := ioutil.TempDir("", "eth-keystore-test") // 创建临时文件
 	if err != nil {
 		fmt.Println("fail to TempDir: ", err)
 		return "nil", nil
@@ -21,7 +21,7 @@ func tmpKeyStore(encrypt bool) (string, *keystore.KeyStore) {
 
 	new := keystore.NewPlaintextKeyStore
 	if encrypt {
-		new = func(kd string) *keystore.KeyStore { 
+		new = func(kd string) *keystore.KeyStore {
 			return keystore.NewKeyStore(kd, 2, 1) // 路径， scryptN, scryptP 生产KeyStore
 		}
 	}
@@ -59,7 +59,7 @@ func SignHashWithPass(acc accounts.Account, pass string, ks *keystore.KeyStore) 
 	_, err = ks.SignHashWithPassphrase(acc, pass, testSigData)
 	if err != nil {
 		fmt.Println("SignHashWith Pass :", err)
-		return 
+		return
 	}
 
 	fmt.Printf("SIgn pass hash: %x\n", testSigData)

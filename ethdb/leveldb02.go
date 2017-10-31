@@ -16,7 +16,7 @@ func DbPut(key, value string, ldb *ethdb.LDBDatabase) {
 }
 
 func DbGet(key string, ldb *ethdb.LDBDatabase) {
-	val, err := ldb.Get([]byte(key)); 
+	val, err := ldb.Get([]byte(key))
 	if err != nil {
 		fmt.Println("DB Get : ", err)
 		return
@@ -25,10 +25,10 @@ func DbGet(key string, ldb *ethdb.LDBDatabase) {
 }
 
 func main() {
-	ldb, err := ethdb.NewLDBDatabase("test.db", 10,  10)
+	ldb, err := ethdb.NewLDBDatabase("test.db", 10, 10)
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 
 	defer ldb.Close()

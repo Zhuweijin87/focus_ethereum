@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"github.com/ethereum/go-ethereum/p2p"
+	"time"
 )
 
 func readMsg(p *p2p.MsgPipeRW) {
@@ -22,7 +22,7 @@ func readMsg(p *p2p.MsgPipeRW) {
 }
 
 func main() {
-	p1, p2 := p2p.MsgPipe() 
+	p1, p2 := p2p.MsgPipe()
 	defer p1.Close()
 	defer p2.Close()
 

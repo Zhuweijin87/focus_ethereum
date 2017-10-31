@@ -8,7 +8,7 @@ import (
 )
 
 func BasicWhisper() {
-	w := wsp.New(&wsp.DefaultConfig)  // 默认的配置
+	w := wsp.New(&wsp.DefaultConfig) // 默认的配置
 	p := w.Protocols()
 	shh := p[0]
 
@@ -30,7 +30,7 @@ func BasicWhisper() {
 		fmt.Printf("failed whisper Version: %v\n", shh.Version)
 	}
 
-	mail := w.Envelopes() 
+	mail := w.Envelopes()
 	if len(mail) == 0 {
 		fmt.Println("no envelope")
 	}
@@ -40,14 +40,14 @@ func BasicWhisper() {
 		fmt.Println(err)
 	}
 
-	fmt.Println(id) 
+	fmt.Println(id)
 
 	if !w.HasKeyPair(id) {
 		fmt.Printf("%v has no keypair\n", id)
 	}
-	
+
 	// 获取密钥
-	pk, err := w.GetPrivateKey(id) 
+	pk, err := w.GetPrivateKey(id)
 	if err != nil {
 		fmt.Println(err)
 	}
