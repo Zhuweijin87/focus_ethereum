@@ -90,7 +90,7 @@ type Peer struct {
 // 消息体数据(不含加密，签名)
 type MessageParams struct {
 	TTL      uint32             // 消息体有效
-	Src      *ecdsa.PrivateKey  // 公钥
+	Src      *ecdsa.PrivateKey  // 公钥 : 做为显示消息的来源
 	Dst      *ecdsa.PublicKey   // 私钥
 	KeySym   []byte             // 对称加密密钥
 	Topic    TopicType          // Topic: 网络传输相关
@@ -113,7 +113,7 @@ type ReceivedMessage struct {
 	PoW     float64       // 工作量
 	Sent    uint32        // 消息发送时间
 	TTL     uint32        // 消息的生命期
-	Src     *ecdsa.PublicKey // 消息接受者公钥
+	Src     *ecdsa.PublicKey // 消息接受者公钥 : 可以判断接收的消息是不是自己的，是自己的可以不处理
 	Dst     *ecdsa.PublicKey // 消息接受者公钥 Filter公钥
 	Topic   TopicType   // 
 
