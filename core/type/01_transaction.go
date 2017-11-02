@@ -15,4 +15,6 @@ func main() {
 		return 
 	}
 	fmt.Println(trans)
+
+	trans.SigHash()
 }
