@@ -25,8 +25,9 @@ func main() {
 	// 转化为地址(取后20位)
 	addr := crypto.PubkeyToAddress(pubKey)
 
-	fmt.Printf("address str: %x\n", addr)
+	fmt.Println("address str: ", addr.String())
 
+	fmt.Printf("address hash: %x\n", addr.Hash())
 	// 哈希
 	/*
 		hash := crypto.Keccak256Hash([]byte("zhuweijin"))

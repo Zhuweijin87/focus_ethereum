@@ -341,9 +341,9 @@ CREATE TABLE IF NOT EXISTS witness (
 
 -- 资金流水
 CREATE TABLE IF NOT EXISTS coin_flow (
-  unit_hash   varchar(44) NOT NULL,
+  unit_hash   varchar(64) NOT NULL,
   address     varchar(44) NOT NULL,
-  src_unit_hash varchar(44) NOT NULL,
+  src_unit_hash varchar(64) NOT NULL,
   amount  int,
   is_credit  int,
   typ   int,
