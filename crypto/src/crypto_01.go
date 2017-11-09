@@ -38,4 +38,11 @@ func main() {
 	// 用私钥签名
 	sign, _ := crypto.Sign([]byte(hash), privKey)
 	fmt.Printf("签名之后: %x\n", sign)
+
+	// 数据长度必须是32个字节
+	sign2, err := crypto.Sign([]byte("12345678"), privKey)
+	if err != nil {
+		fmt.Println("sign : ", err)
+	}
+	fmt.Printf("签名之后: %x\n", sign2)
 }

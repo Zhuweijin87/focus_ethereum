@@ -9,4 +9,6 @@
 + consensus  共识算法 
 + console 命令行交互
 + containers 容器
-+ contracts 智能合约相关 
++ contracts 内置智能合约
++ p2p p2p网络 
++ crypto  加密算法： 哈希，签名，公私钥等
